@@ -6,7 +6,7 @@ This repository is currently under active development.
 
 ---
 
-## Planned Extensions
+## :rocket: Planned Extensions
 
 * Heuristic Search for PSC and Fiscal Terms
 * Extended Optimization with MILP
