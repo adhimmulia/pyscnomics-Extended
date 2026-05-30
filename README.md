@@ -9,9 +9,9 @@ This repository is currently under active development.
 ## Planned Extensions
 
 * Heuristic Search for PSC and Fiscal Terms
+* Extended Optimization with MILP
 * Real Options Analysis Module
 * Value at Risk (VaR) and CVaR Module
-* Stochastic Economic Evaluation
 * Advanced Fiscal Optimization Workflows
 
 ---
@@ -25,12 +25,6 @@ pip install git+https://github.com/adhimmulia/pyscnomics-Extended.git
 ---
 
 ## Recommended Environment
-
-* Python 3.11 or 3.12
-* NumPy
-* Pandas
-* SciPy
-* PyXIRR
 
 ---
 
