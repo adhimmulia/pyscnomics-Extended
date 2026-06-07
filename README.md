@@ -1,39 +1,63 @@
-# PySCnomics-Extended
+# PySCnomics
 
-An extended version of `PySCnomics` focused on advanced project economic evaluation, fiscal optimization, and risk-aware decision analysis for upstream oil and gas projects.
+> An economic engine for calculating PSC (Production Sharing Contract) schemes in Indonesia.
 
-This repository is currently under active development.
+PySCnomics is a Python package for assessing the economic feasibility of oil and gas projects following Indonesian PSC schemes, including Cost Recovery, Gross Split, and their transition variants. Developed jointly by SKK Migas and Institut Teknologi Bandung (ITB).
 
----
+- 📖 **Documentation:** [https://pyscnomics.readthedocs.io](https://pyscnomics.readthedocs.io)
+- 🐍 **Python:** 3.11+
 
-## :rocket: Planned Extensions
-
-* Heuristic Search for PSC and Fiscal Terms
-* Extended Optimization with MILP
-* Real Options Analysis Module
-* Value at Risk (VaR) and CVaR Module
-* Advanced Fiscal Optimization Workflows
-
----
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/adhimmulia/pyscnomics-Extended.git
+pip install pyscnomics
 ```
 
----
+## Key Features
 
-## Recommended Environment
+- **Base Project**, **Cost Recovery**, **Gross Split**, and **Transition** contract types
+- **Optimization**, **Sensitivity**, and **Uncertainty** analysis
+- Depreciation, inflation, cost taxing, and production profile generation
+- REST API service with 30 endpoints (FastAPI)
 
----
+## Quick Start
 
-## Development Status
+```python
+from pyscnomics.dataset.object_sample import generate_contract_sample
+from pyscnomics.econ.selection import ContractSample
+from pyscnomics.tools.table import get_table
 
-This project is currently experimental and under continuous development. Features, APIs, and module structures may change over time.
+psc = generate_contract_sample(case=ContractSample.CASE_1)
+tables = get_table(contract=psc)
+print(tables)
+```
 
----
+## API Service
 
-## Acknowledgment
+```bash
+pyscnomics --api 1 --port 9999
+```
 
-This repository is an extension of the original `PySCnomics` framework for advanced petroleum economic analysis and research applications.
+Interactive docs available at `http://localhost:9999/docs` once the server is running.
+
+## Development
+
+```bash
+git clone https://github.com/fajril/pyscnomics.git
+cd pyscnomics
+uv sync
+uv run pytest
+```
+
+## Contributing
+
+Contributions are welcome. Please open an issue first for major changes.
+
+Public forks in active use:
+- [adhimmulia/pyscnomics-Extended](https://github.com/adhimmulia/pyscnomics-Extended)
+- [aguswe/pyscnomics](https://github.com/aguswe/pyscnomics)
+
+## License
+
+Licensed under the Apache Software License. See [LICENSE](LICENSE).
