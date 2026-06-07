@@ -1,3 +1,8 @@
+"""
+A collection of methods to convert string datatype from JSON inputs
+to their corresponding datatypes in the core engine.
+"""
+
 import json
 import os
 import importlib.resources as pkg_resources
@@ -9,9 +14,10 @@ import pandas as pd
 
 from pyscnomics.contracts.project import BaseProject
 from pyscnomics.contracts.costrecovery import CostRecovery
-from pyscnomics.contracts.grossplit import GrossSplit
+from pyscnomics.contracts.gross_split import GrossSplit
 from pyscnomics.econ.costs import CapitalCost, Intangible, OPEX, ASR, LBT, CostOfSales
-from pyscnomics.econ.revenue import Lifting, FluidType
+from pyscnomics.econ.revenue import Lifting
+from pyscnomics.econ.selection import FluidType, CostType
 
 
 def get_json_file_names() -> list:
@@ -80,7 +86,7 @@ def read_json_file(file_name: str) -> dict:
 
 def read_fluid_type(fluid: list | str) -> list[FluidType] | FluidType:
     """
-    A function to converting the str input into FluidType Enum class.
+    A function to convert the str input into FluidType Enum class.
 
     Parameters
     ----------
@@ -106,7 +112,6 @@ def read_fluid_type(fluid: list | str) -> list[FluidType] | FluidType:
             return FluidType.CO2
 
     else:
-
         fluid_mapping = {'Oil': FluidType.OIL,
                          'Gas': FluidType.GAS,
                          'Sulfur': FluidType.SULFUR,
@@ -115,6 +120,89 @@ def read_fluid_type(fluid: list | str) -> list[FluidType] | FluidType:
 
         # Replace elements in the list using the mapping
         result = [fluid_mapping[i] for i in fluid if i in fluid_mapping]
+
+        return result
+
+
+def read_cost_type(cost_type: str | list) -> CostType | list[CostType]:
+    """
+    Convert cost type(s) from string representation to corresponding CostType enum.
+
+    This function accepts either a single string or a list of strings representing
+    cost types and returns the corresponding `CostType` enum instance(s).
+    Valid cost type strings include:
+    - "sunk_cost"
+    - "preonstream_cost"
+    - "postonstream_cost"
+
+    Parameters
+    ----------
+    cost_type : str or list of str
+        Cost type(s) to be converted. Can be a single string (e.g., "Sunk Cost")
+        or a list of strings (e.g., ["Sunk Cost", "Postonstream Cost"]).
+
+    Returns
+    -------
+    CostType or list of CostType
+        The corresponding `CostType` enum instance(s) matching the input.
+        Returns a single `CostType` if input is a string, otherwise returns
+        a list of `CostType` objects.
+
+    Raises
+    ------
+    TypeError
+        If `cost_type` is not a string or list, or if any element within the list
+        is not a valid cost type string.
+    KeyError
+        If a string input does not match any recognized cost type.
+
+    Notes
+    -----
+    Valid cost type strings are case-sensitive and must exactly match one of the
+    following:
+    - "sunk_cost"
+    - "preonstream_cost"
+    - "postonstream_cost"
+    """
+
+    # Only allow string or list as the datatype of `cost_type`
+    if not isinstance(cost_type, (str, list)):
+        return TypeError(
+            f"Parameter cost_type must be a string or a list, "
+            f"not {cost_type.__class__.__qualname__}"
+        )
+
+    # Transformation string -> CostType(Enum) for string input
+    if isinstance(cost_type, str):
+        if cost_type == "sunk_cost":
+            return CostType.SUNK_COST
+
+        elif cost_type == "preonstream_cost":
+            return CostType.PRE_ONSTREAM_COST
+
+        elif cost_type == "postonstream_cost":
+            return CostType.POST_ONSTREAM_COST
+
+        else:
+            raise KeyError(f"Parameter cost_type ({cost_type}) is unrecognized")
+
+    # Transformation string -> CostType(Enum) for list input
+    else:
+        cost_type_mapping = {
+            "sunk_cost": CostType.SUNK_COST,
+            "preonstream_cost": CostType.PRE_ONSTREAM_COST,
+            "postonstream_cost": CostType.POST_ONSTREAM_COST,
+            None: None,
+        }
+
+        # Replace each string inside the cost_type list into their
+        # corresponding CostType(Enum) counterparts
+        result = [0] * len(cost_type)
+        for i, ct in enumerate(cost_type):
+            if ct in cost_type_mapping.keys():
+                result[i] = cost_type_mapping[ct]
+            else:
+                raise TypeError(f"Invalid cost type: {ct}")
 
         return result
 
@@ -154,45 +242,66 @@ def assign_lifting(data_raw: dict) -> tuple | None:
     -------
     lifting_list: tuple | None
         The list containing the lifting dataclass.
-
     """
-    # Defining the data source and the list container for Lifting. Then, assign them based on their fluid type
+
+    # Defining data source and container for Lifting (container as list datatype).
+    # Then, assign them based on their fluid type
     lifting_data = data_raw['lifting']
+
     if lifting_data is None:
         return None
+
     else:
         lifting_list = []
         for key in lifting_data.keys():
-            # Since the Lifting data for gas has different arguments input, conditional formatting is applied
+            # Since the Lifting data for gas has different arguments input,
+            # conditional formatting is applied
             if 'Gas' in key or 'GSA' in key:
-                lifting = Lifting(start_year=lifting_data[key]["start_year"],
-                                  end_year=lifting_data[key]["end_year"],
-                                  lifting_rate=np.array(lifting_data[key]["lifting_rate"]),
-                                  price=np.array(lifting_data[key]["price"]),
-                                  prod_year=np.array(lifting_data[key]["prod_year"]),
-                                  fluid_type=read_fluid_type(lifting_data[key]["fluid_type"]),
-                                  ghv=None if lifting_data[key]["ghv"] is None else
-                                  np.array(lifting_data[key]["ghv"]),
-                                  prod_rate=None if lifting_data[key]["prod_rate"] is None or "prod_rate" not in lifting_data[key]
-                                  else np.array(lifting_data[key]["prod_rate"]),
-                                  prod_rate_baseline=None if lifting_data[key]["prod_rate_baseline"] is None or "prod_rate_baseline" not in lifting_data[key]
-                                  else np.array(lifting_data[key]["prod_rate_baseline"]),
-                                  )
+                lifting = Lifting(
+                    start_year=lifting_data[key]["start_year"],
+                    end_year=lifting_data[key]["end_year"],
+                    lifting_rate=np.array(lifting_data[key]["lifting_rate"]),
+                    price=np.array(lifting_data[key]["price"]),
+                    prod_year=np.array(lifting_data[key]["prod_year"]),
+                    fluid_type=read_fluid_type(lifting_data[key]["fluid_type"]),
+                    ghv=(
+                        None if lifting_data[key]["ghv"] is None
+                        else np.array(lifting_data[key]["ghv"])
+                    ),
+                    prod_rate=(
+                        None if lifting_data[key]["prod_rate"] is None
+                        or "prod_rate" not in lifting_data[key]
+                        else np.array(lifting_data[key]["prod_rate"])
+                    ),
+                    prod_rate_baseline=(
+                        None if lifting_data[key]["prod_rate_baseline"] is None
+                        or "prod_rate_baseline" not in lifting_data[key]
+                        else np.array(lifting_data[key]["prod_rate_baseline"])
+                    ),
+                )
 
                 lifting_list.append(lifting)
 
             else:
-                lifting = Lifting(start_year=lifting_data[key]["start_year"],
-                                  end_year=lifting_data[key]["end_year"],
-                                  lifting_rate=np.array(lifting_data[key]["lifting_rate"]),
-                                  price=np.array(lifting_data[key]["price"]),
-                                  prod_year=np.array(lifting_data[key]["prod_year"]),
-                                  fluid_type=read_fluid_type(lifting_data[key]["fluid_type"]),
-                                  prod_rate=None if lifting_data[key]["prod_rate"] is None or "prod_rate" not in lifting_data[key]
-                                  else np.array(lifting_data[key]["prod_rate"]),
-                                  prod_rate_baseline=None if lifting_data[key]["prod_rate_baseline"] is None or "prod_rate_baseline" not in lifting_data[key]
-                                  else np.array(lifting_data[key]["prod_rate_baseline"]),
-                                  )
+                lifting = Lifting(
+                    start_year=lifting_data[key]["start_year"],
+                    end_year=lifting_data[key]["end_year"],
+                    lifting_rate=np.array(lifting_data[key]["lifting_rate"]),
+                    price=np.array(lifting_data[key]["price"]),
+                    prod_year=np.array(lifting_data[key]["prod_year"]),
+                    fluid_type=read_fluid_type(lifting_data[key]["fluid_type"]),
+                    prod_rate=(
+                        None if lifting_data[key]["prod_rate"] is None
+                        or "prod_rate" not in lifting_data[key]
+                        else np.array(lifting_data[key]["prod_rate"])
+                    ),
+                    prod_rate_baseline=(
+                        None if lifting_data[key]["prod_rate_baseline"] is None
+                        or "prod_rate_baseline" not in lifting_data[key]
+                        else np.array(lifting_data[key]["prod_rate_baseline"])
+                    ),
+                )
+
                 lifting_list.append(lifting)
 
         return tuple(lifting_list)
@@ -383,12 +492,15 @@ def load_data(dataset_type: str, contract_type: str = 'project') -> BaseProject 
 
     # Assigning the lifting and cost data.
     lifting_tuple = assign_lifting(data_raw)
-    capital_tuple, intangible_tuple, opex_tuple, asr_tuple, lbt_tuple, cos_tuple = assign_cost(data_raw)
+    capital_tuple, intangible_tuple, opex_tuple, asr_tuple, lbt_tuple, cos_tuple = [
+        tuple(x) if isinstance(x, list) else x for x in assign_cost(data_raw)
+    ]
 
     if contract_type == 'project':
         return BaseProject(
             start_date=project_start_date,
             end_date=project_end_date,
+            approval_year=project_start_date.year,
             oil_onstream_date=oil_onstream_date,
             gas_onstream_date=gas_onstream_date,
             lifting=lifting_tuple,
@@ -405,6 +517,7 @@ def load_data(dataset_type: str, contract_type: str = 'project') -> BaseProject 
         return CostRecovery(
             start_date=project_start_date,
             end_date=project_end_date,
+            approval_year=project_start_date.year,
             oil_onstream_date=oil_onstream_date,
             gas_onstream_date=gas_onstream_date,
             lifting=lifting_tuple,
@@ -440,6 +553,7 @@ def load_data(dataset_type: str, contract_type: str = 'project') -> BaseProject 
         return GrossSplit(
             start_date=project_start_date,
             end_date=project_end_date,
+            approval_year=project_start_date.year,
             oil_onstream_date=oil_onstream_date,
             gas_onstream_date=gas_onstream_date,
             lifting=lifting_tuple,
@@ -459,9 +573,6 @@ def load_data(dataset_type: str, contract_type: str = 'project') -> BaseProject 
             prod_stage=config['prod_stage'],
             co2_content=config['co2_content'],
             h2s_content=config['h2s_content'],
-            base_split_ctr_oil=config['base_split_ctr_oil'],
-            base_split_ctr_gas=config['base_split_ctr_gas'],
-            split_ministry_disc=config['split_ministry_disc'],
             oil_dmo_volume_portion=config['oil_dmo_volume_portion'],
             oil_dmo_fee_portion=config['oil_dmo_fee_portion'],
             oil_dmo_holiday_duration=config['oil_dmo_holiday_duration'],
@@ -471,90 +582,3 @@ def load_data(dataset_type: str, contract_type: str = 'project') -> BaseProject 
         )
 
 
-def load_cost(
-        filename: str,
-        start_year: int = 2023,
-        end_year: int = 2043,
-        cost_allocation: FluidType = FluidType.OIL,
-        template: str = "pyscnomics"
-) -> tuple[CapitalCost, Intangible, OPEX, ASR] | ValueError:
-    """
-    Function to load the cost data from Excel file.
-
-    Parameters
-    ----------
-    filename: str
-        The name of the Excel file.
-    start_year: int
-        The start year of the cost data.
-    end_year: int
-        The end year of the cost data
-    cost_allocation: FluidType
-        The fluid type of that the cost will be allocated to.
-    template: str
-        The type of Excel source that will be read. The available types are: ['pyscnomics', 'questor']
-
-    Returns
-    -------
-    out: tuple
-        Capital
-            The Tangible dataclass.
-        Intangible
-            The Intangible dataclass
-        OPEX
-            The OPEX dataclass
-        ASR
-            The ASR dataclass
-    """
-
-    # Defining the available template list and making the condition if not satisfied
-    template_list = ['pyscnomics', 'questor']
-    if template not in template_list:
-        raise ValueError('Unknown Template: "{0}", please check the Template Type in Docstring.'.format(template))
-
-    # Reading the Questor Excels file from column B to W and replacing the value of NaN with 0
-    df = pd.read_excel(filename, skiprows=18, header=None, na_values=0).fillna(value=0)
-    years_arr = np.arange(start_year, start_year + df.shape[0], 1)
-    df.set_index(years_arr, inplace=True)
-
-    # Assigning the Tangible data
-    capital_arr = np.array(df[[5, 7, 8, 9, 10, 11, 12]].sum(axis=1).to_numpy(dtype=float))
-    capital = CapitalCost(
-        start_year=start_year,
-        end_year=end_year,
-        cost=capital_arr,
-        expense_year=years_arr,
-        cost_allocation=[cost_allocation] * len(capital_arr)
-    )
-
-    # Assigning the Intangible data
-    intangible_arr = df[6].to_numpy(dtype=float)
-    intangible = Intangible(
-        start_year=start_year,
-        end_year=end_year,
-        cost=intangible_arr,
-        expense_year=years_arr,
-        cost_allocation=[cost_allocation] * len(capital_arr)
-    )
-
-    # Assigning the ASR data
-    asr_arr = df[18].to_numpy(dtype=float)
-    asr = ASR(
-        start_year=start_year,
-        end_year=end_year,
-        cost=asr_arr,
-        expense_year=years_arr,
-        cost_allocation=[cost_allocation] * len(capital_arr)
-    )
-
-    # Assigning the OPEX data
-    fixed_cost_arr = df[[13, 14, 15, 16, 17]].sum(axis=1).to_numpy(dtype=float)
-    opex = OPEX(
-        start_year=start_year,
-        end_year=end_year,
-        fixed_cost=fixed_cost_arr,
-        expense_year=years_arr,
-        cost_allocation=[cost_allocation] * len(capital_arr)
-    )
-
-    return capital, intangible, opex, asr
