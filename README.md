@@ -8,11 +8,11 @@ This repository is currently under active development.
 
 ## :rocket: Planned Extensions
 
-* Heuristic Search for PSC and Fiscal Terms
-* Extended Optimization with MILP
+* Project Decision Tree Analysis (DTA)
+* Advanced Fiscal Optimization Workflows
 * Real Options Analysis Module
 * Value at Risk (VaR) and CVaR Module
-* Advanced Fiscal Optimization Workflows
+* Extended Optimization with MILP
 
 ---
 
