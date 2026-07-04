@@ -202,6 +202,6 @@ summary_parameter = {
 # ---------------------------------------------------------------------------
 project.run(**fiscal)
 summary = project.get_summary(**summary_parameter)
-
-for key, value in summary.items():
-    print(f"{key}: {value}")
+#
+# for key, value in summary.items():
+#     print(f"{key}: {value}")

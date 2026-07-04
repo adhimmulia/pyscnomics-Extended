@@ -223,12 +223,35 @@ class DecisionTree:
                                       name=label))
 
         fig.update_layout(
-            title=self.title,
-            xaxis=dict(visible=False, range=[-0.5, max_depth + 1.5]),
-            yaxis=dict(visible=False),
-            plot_bgcolor="white", height=520 + 40 * len(positions) // max(1, max_depth + 1),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=40, r=120, t=80, b=40),
+            title=dict(
+                text=self.title,
+                x=0.5,  # Center horizontally
+                xanchor="center",
+                y=0.97,
+                yanchor="top",
+            ),
+            xaxis=dict(
+                visible=False,
+                range=[-0.5, max_depth + 1.5],
+            ),
+            yaxis=dict(
+                visible=False,
+            ),
+            plot_bgcolor="white",
+            height=520 + 40 * len(positions) // max(1, max_depth + 1),
+            legend=dict(
+                orientation="h",
+                x=0.5,  # Center horizontally
+                xanchor="center",
+                y=-0.10,  # Place below the plot
+                yanchor="top",
+            ),
+            margin=dict(
+                l=40,
+                r=120,
+                t=80,
+                b=90,  # Increase bottom margin for the legend
+            ),
         )
         return fig
 
@@ -236,45 +259,45 @@ class DecisionTree:
 # ---------------------------------------------------------------------------
 # Example: E&P appraisal/development decision under uncertainty
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    # Terminal NPVs here are placeholders — in practice, each would come from
-    # a pyscnomics CostRecovery.run() -> get_summary() call for that scenario's
-    # production profile, cost structure, and fiscal terms.
-
-    # Terminal values are net NPVs (any capex/drilling cost is already
-    # netted in — e.g. by pyscnomics.CostRecovery.run() -> get_summary()
-    # for that scenario's production profile, cost structure, and fiscal terms).
-
-    # --- Success branch: choose Large vs Small development ---
-    dev_large_success = Node("NPV: Large Dev | Success", NodeType.TERMINAL, value=550.0)
-    dev_small_success = Node("NPV: Small Dev | Success", NodeType.TERMINAL, value=300.0)
-
-    develop_decision = Node("Develop?", NodeType.DECISION, maximize=True)
-    develop_decision.add_branch(Branch("Large development", dev_large_success))
-    develop_decision.add_branch(Branch("Small development", dev_small_success))
-
-    # --- Dry branch: abandon ---
-    abandon = Node("NPV: Abandon | Dry", NodeType.TERMINAL, value=-80.0)
-
-    # --- Chance node: drilling outcome ---
-    drill_outcome = Node("Drilling Outcome", NodeType.CHANCE)
-    drill_outcome.add_branch(Branch("Success (POS=35%)", develop_decision, probability=0.35))
-    drill_outcome.add_branch(Branch("Dry (65%)", abandon, probability=0.65))
-
-    # --- Alternative top-level choice: farm-out instead of drilling ---
-    farm_out = Node("NPV: Farm-out", NodeType.TERMINAL, value=60.0)
-
-    # --- Root decision: Drill vs Farm-out ---
-    root = Node("Drill or Farm-out?", NodeType.DECISION, maximize=True)
-    root.add_branch(Branch("Drill exploration well", drill_outcome))
-    root.add_branch(Branch("Farm-out", farm_out))
-
-    tree = DecisionTree(root, title="E&P Appraisal Decision Tree (illustrative NPVs, $MM)")
-    ev = tree.evaluate()
-    print(f"Root expected value: ${ev:,.2f} MM")
-    print(f"Optimal top-level choice: {root.optimal_branch}")
-    print(f"Optimal development choice (if success): {develop_decision.optimal_branch}")
-
-    fig = tree.plot()
-    fig.write_html("decision_tree_demo.html")
-    print("Saved interactive plot to decision_tree_demo.html")
+# if __name__ == "__main__":
+#     # Terminal NPVs here are placeholders — in practice, each would come from
+#     # a pyscnomics CostRecovery.run() -> get_summary() call for that scenario's
+#     # production profile, cost structure, and fiscal terms.
+#
+#     # Terminal values are net NPVs (any capex/drilling cost is already
+#     # netted in — e.g. by pyscnomics.CostRecovery.run() -> get_summary()
+#     # for that scenario's production profile, cost structure, and fiscal terms).
+#
+#     # --- Success branch: choose Large vs Small development ---
+#     dev_large_success = Node("NPV: Large Dev | Success", NodeType.TERMINAL, value=550.0)
+#     dev_small_success = Node("NPV: Small Dev | Success", NodeType.TERMINAL, value=300.0)
+#
+#     develop_decision = Node("Develop?", NodeType.DECISION, maximize=True)
+#     develop_decision.add_branch(Branch("Large development", dev_large_success))
+#     develop_decision.add_branch(Branch("Small development", dev_small_success))
+#
+#     # --- Dry branch: abandon ---
+#     abandon = Node("NPV: Abandon | Dry", NodeType.TERMINAL, value=-80.0)
+#
+#     # --- Chance node: drilling outcome ---
+#     drill_outcome = Node("Drilling Outcome", NodeType.CHANCE)
+#     drill_outcome.add_branch(Branch("Success (POS=35%)", develop_decision, probability=0.35))
+#     drill_outcome.add_branch(Branch("Dry (65%)", abandon, probability=0.65))
+#
+#     # --- Alternative top-level choice: farm-out instead of drilling ---
+#     farm_out = Node("NPV: Farm-out", NodeType.TERMINAL, value=60.0)
+#
+#     # --- Root decision: Drill vs Farm-out ---
+#     root = Node("Drill or Farm-out?", NodeType.DECISION, maximize=True)
+#     root.add_branch(Branch("Drill exploration well", drill_outcome))
+#     root.add_branch(Branch("Farm-out", farm_out))
+#
+#     tree = DecisionTree(root, title="E&P Appraisal Decision Tree (illustrative NPVs, $MM)")
+#     ev = tree.evaluate()
+#     print(f"Root expected value: ${ev:,.2f} MM")
+#     print(f"Optimal top-level choice: {root.optimal_branch}")
+#     print(f"Optimal development choice (if success): {develop_decision.optimal_branch}")
+#
+#     fig = tree.plot()
+#     fig.write_html("decision_tree_demo.html")
+#     print("Saved interactive plot to decision_tree_demo.html")

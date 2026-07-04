@@ -172,9 +172,9 @@ project.run(**fiscal)
 # Retrieve the Economic Indicator of the project
 summary = project.get_summary(**summary_parameter)
 
-# Printing Out the Summary
-for key, value in summary.items():
-    print(f"{key}: {value}")
+# # Printing Out the Summary
+# for key, value in summary.items():
+#     print(f"{key}: {value}")
 
 
 
